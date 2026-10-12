@@ -29,12 +29,12 @@ class EventsListener
     {
         $langOptions = json_decode(\XF::options()->CMTV_Code_langOptions, true);
 
-        if ($langOptions === null)
+        if (!is_array($langOptions))
             return;
 
         foreach ($langOptions as $lang => $options)
         {
-            if ($languages[$lang] === null) continue;
+            if (!isset($languages[$lang]) || !is_array($languages[$lang]) || !is_array($options)) continue;
             $languages[$lang] = array_merge_recursive($languages[$lang], $options);
         }
 

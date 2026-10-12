@@ -1,5 +1,8 @@
 {
     "public/CMTV_Code_editor_dialog_code_default_language.json": {
         "hash": "ce37eb747f26c1372cacdb9ed4aca1d1"
+    },
+    "public/CMTV_Code_helper_js_global_phrase.json": {
+        "hash": "bc01afcd1a9813586261365dd1c9559c"
     }
 }

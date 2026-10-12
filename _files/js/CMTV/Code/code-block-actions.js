@@ -1,73 +1,79 @@
 var CMTV_Code = window.CMTV_Code || {};
 
-(function ($)
+(function ()
 {
-    "use strict";
+    'use strict';
 
-    // ############################## COPY ACTION ##############################
+    CMTV_Code.CodeBlock_Copy = XF.Event.newHandler({
+        eventType: 'click',
+        eventNameSpace: 'CMTV_CodeCodeBlock_Copy',
+        init: function () {},
 
-    CMTV_Code.CodeBlock_Copy = new Clipboard('.bbCodeBlock--code .action--copy', {
-        target: function (a)
+        click: async function (e)
         {
-            return $(a).closest('.bbCodeBlock--code').find('code').get(0);
+            e.preventDefault();
+            var code = this.target.closest('.bbCodeBlock--code').querySelector('code').cloneNode(true);
+            // Prism can append range labels and measuring nodes to the code element.
+            code.querySelectorAll('.line-numbers-rows, .line-numbers-sizer, .line-highlight').forEach(node => node.remove());
+            var text = code.textContent;
+            try
+            {
+                if (!navigator.clipboard || !window.isSecureContext) throw new Error('Clipboard API unavailable');
+                await navigator.clipboard.writeText(text);
+            }
+            catch (error)
+            {
+                // Native fallback for HTTP or denied clipboard permission.
+                var input = document.createElement('textarea');
+                var active = document.activeElement;
+                input.value = text;
+                input.style.cssText = 'position:fixed;left:-10000px;top:0';
+                document.body.appendChild(input);
+                input.select();
+                var copied = false;
+                try { copied = document.execCommand('copy'); }
+                catch (ignored) { /* Show selectable text below. */ }
+                finally
+                {
+                    input.remove();
+                    if (active) active.focus({ preventScroll: true });
+                }
+                if (!copied)
+                {
+                    window.prompt(XF.phrase('CMTV_Code_copy'), text);
+                    return;
+                }
+            }
+            XF.flashMessage(XF.phrase('CMTV_Code_copied'), 1500);
         }
     });
 
-    CMTV_Code.CodeBlock_Copy.on('success', function (a)
-    {
-        a.clearSelection();
-        XF.flashMessage(XF.phrase('CMTV_Code_copied'), 1500);
-    });
-
-    // ############################## EXPAND ACTION ##############################
-
-    CMTV_Code.CodeBlock_Expand = XF.Click.newHandler({
+    CMTV_Code.CodeBlock_Expand = XF.Event.newHandler({
+        eventType: 'click',
         eventNameSpace: 'CMTV_CodeCodeBlock_Expand',
-
-        codeBlockH: null,
-        
-        init: function ()
+        init: function () {},
+        click: function (e)
         {
-            this.codeBlockH = XF.Element.getHandler(this.$target.closest('.bbCodeBlock--code'), 'CMTV-code-block');
-        },
-        
-        click: function ()
-        {
-            this.codeBlockH.resizeButtons.$expand.addClass('action--hidden');
-            this.codeBlockH.resizeButtons.$collapse.removeClass('action--hidden');
-
-            this.codeBlockH.$codeContainer.stop().animate({
-                height: this.codeBlockH.maxHeight + 'px'
-            }, 200);
+            e.preventDefault();
+            var handler = XF.Element.getHandler(this.target.closest('.bbCodeBlock--code'), 'CMTV-code-block');
+            handler.visibleInit();
+            handler.resize(handler.maxHeight);
         }
     });
 
-    // ############################## COLLAPSE ACTION ##############################
-
-    CMTV_Code.CodeBlock_Collapse = XF.Click.newHandler({
+    CMTV_Code.CodeBlock_Collapse = XF.Event.newHandler({
+        eventType: 'click',
         eventNameSpace: 'CMTV_CodeCodeBlock_Collapse',
-        
-        codeBlockH: null,
-        
-        init: function ()
+        init: function () {},
+        click: function (e)
         {
-            this.codeBlockH = XF.Element.getHandler(this.$target.closest('.bbCodeBlock--code'), 'CMTV-code-block');
-        },
-        
-        click: function ()
-        {
-            this.codeBlockH.resizeButtons.$expand.removeClass('action--hidden');
-            this.codeBlockH.resizeButtons.$collapse.addClass('action--hidden');
-
-            this.codeBlockH.$codeContainer.stop().animate({
-                height: this.codeBlockH.minHeight + 'px'
-            }, 200);
+            e.preventDefault();
+            var handler = XF.Element.getHandler(this.target.closest('.bbCodeBlock--code'), 'CMTV-code-block');
+            handler.resize(handler.minHeight);
         }
     });
 
-    // ############################## REGISTERING ##############################
-
-    XF.Click.register('CMTV-code-block-expand', 'CMTV_Code.CodeBlock_Expand');
-    XF.Click.register('CMTV-code-block-collapse', 'CMTV_Code.CodeBlock_Collapse');
-})
-(jQuery);
+    XF.Event.register('click', 'CMTV-code-block-copy', 'CMTV_Code.CodeBlock_Copy');
+    XF.Event.register('click', 'CMTV-code-block-expand', 'CMTV_Code.CodeBlock_Expand');
+    XF.Event.register('click', 'CMTV-code-block-collapse', 'CMTV_Code.CodeBlock_Collapse');
+})();

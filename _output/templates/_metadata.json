@@ -3,5 +3,15 @@
         "version_id": 2010270,
         "version_string": "2.1.2",
         "hash": "30e4dcce4b576468822c195d8d001a06"
+    },
+    "public/CMTV_Code_bb_code_tag_code.html": {
+        "version_id": 2020170,
+        "version_string": "2.2.1",
+        "hash": "59e21045da6687cae4eb858d18d88626"
+    },
+    "public/CMTV_Code_code_block.less": {
+        "version_id": 2020170,
+        "version_string": "2.2.1",
+        "hash": "6d64f7662ba3f863ed396831be833bb0"
     }
 }

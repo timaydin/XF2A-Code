@@ -1,130 +1,101 @@
-(function ($)
+(function ()
 {
-    "use strict";
+    'use strict';
 
     XF.EditorDialogCode = XF.extend(XF.EditorDialogCode, {
-        __backup: {
-            '_init': '__init',
-            'show': '_show'
-        },
-
-        CMTV_Code_switcherH: null,
-        CMTV_Code_defaultLanguage: null,
-        CMTV_Code_init: true,
-
-        show: function (ed)
-        {
-            this._show(ed);
-
-            if (!this.CMTV_Code_init)
-            {
-                this.setDefaultLanguage();
-            }
-        },
-
-        afterShow: function (overlay) {},
+        __backup: { _init: 'CMTV_Code_init', _afterShow: 'CMTV_Code_afterShow' },
 
         _init: function (overlay)
         {
-            this.__init(overlay);
+            this.CMTV_Code_init(overlay);
+            this.CMTV_Code_defaultLanguage = overlay.container.querySelector('#editor_code_type').value;
+            XF.on(overlay.container, 'code-editor:init', () => this.setDefaultLanguage());
+        },
 
-            var switcherAttr = '[data-xf-init="code-editor-switcher-container"]';
+        _beforeShow: function ()
+        {
+            // Blur the native active element, without accessing Froala's DOM wrapper.
+            if (document.activeElement) document.activeElement.blur();
+        },
 
-            this.CMTV_Code_switcherH = XF.Element.getHandler(overlay.$container.find(switcherAttr), 'code-editor-switcher-container');
-            this.CMTV_Code_defaultLanguage = $('#editor_code_type').val();
-            this.CMTV_Code_init = false;
-
-            overlay.$container.find(switcherAttr).on('code-editor:init', XF.proxy(this, 'setDefaultLanguage'));
+        _afterShow: function (overlay)
+        {
+            // Preserve XF's selection handling and code-editor refresh.
+            this.setDefaultLanguage();
+            this.CMTV_Code_afterShow(overlay);
         },
 
         submit: function (e)
         {
-            //
-            // COPIED FROM editor.js !!!
-            //
-
             e.preventDefault();
-
-            var ed = this.ed,
-                overlay = this.overlay;
-
-            var $codeMirror = overlay.$container.find('.CodeMirror');
-            if ($codeMirror.length)
+            var container = this.overlay.container;
+            var codeMirror = container.querySelector('.CodeMirror');
+            if (codeMirror)
             {
-                var codeMirror = $codeMirror[0].CodeMirror,
-                    doc = codeMirror.getDoc();
-
-                codeMirror.save();
-                doc.setValue('');
-
-                codeMirror.setOption('mode', '');
+                var instance = codeMirror.CodeMirror;
+                instance.save();
+                instance.getDoc().setValue('');
+                instance.setOption('mode', '');
             }
 
-            var $type = $('#editor_code_type'),
-                $code = $('#editor_code_code'),
-                $title = $('#editor_code_title'),
-                $highlight = $('#editor_code_highlight');
-
-            ed.selection.restore();
-            XF.EditorHelpers.insertCode(ed, $type.val(), $code.val(), {
-                title: $title.val().trim(),
-                highlight: $highlight.val().trim()
+            var type = container.querySelector('#editor_code_type');
+            var code = container.querySelector('#editor_code_code');
+            var title = container.querySelector('#editor_code_title');
+            var highlight = container.querySelector('#editor_code_highlight');
+            this.ed.selection.restore();
+            XF.EditorHelpers.insertCode(this.ed, type.value, code.value, {
+                title: title ? title.value.trim() : '',
+                highlight: highlight ? highlight.value.trim() : ''
             });
-
-            overlay.hide();
-
-            $code.val('');
-            $type.val(this.CMTV_Code_defaultLanguage);
-            $title.val('');
-            $highlight.val('');
+            this.overlay.hide();
+            code.value = '';
+            type.value = this.CMTV_Code_defaultLanguage;
+            if (title) title.value = '';
+            if (highlight) highlight.value = '';
         },
 
         setDefaultLanguage: function ()
         {
-            this.overlay.$container.find('[data-xf-init="code-editor"]').data('lang', '').focus();
-            this.CMTV_Code_switcherH.change();
+            var container = this.overlay.container;
+            var type = container.querySelector('#editor_code_type');
+            type.value = this.CMTV_Code_defaultLanguage;
+            var textarea = container.querySelector('[data-xf-init~="code-editor"]');
+            // submit clears CodeMirror's mode; force the switcher to restore it.
+            if (textarea) textarea.dataset.lang = '';
+            var switcher = container.querySelector('[data-xf-init~="code-editor-switcher-container"]');
+            if (switcher) XF.trigger(switcher, 'code-editor:reinit');
         }
     });
 
+    var insertCode = XF.EditorHelpers.insertCode;
     XF.EditorHelpers.insertCode = function (ed, type, code, extra)
     {
-        //
-        // COPIED FROM editor.js !!!
-        //
-
-        var tag, lang, output;
-
-        switch (type.toLowerCase())
-        {
-            case '': tag = 'CODE'; lang = ''; break;
-            default: tag = 'CODE'; lang = type.toLowerCase(); break;
-        }
-
-        code = code.replace(/&/g, '&amp;').replace(/</g, '&lt;')
-            .replace(/>/g, '&gt;').replace(/"/g, '&quot;')
-            .replace(/\t/g, '    ')
-            .replace(/\n /g, '\n&nbsp;')
-            .replace(/  /g, '&nbsp; ')
-            .replace(/  /g, ' &nbsp;') // need to do this twice to catch a situation where there are an odd number of spaces
-            .replace(/\n/g, '</p><p>');
-
+        extra = extra || {};
         if (!extra.title && !extra.highlight)
         {
-            output = '[' + tag + (lang ? '=' + lang : '') + ']' + code + '[/' + tag + ']';
-        }
-        else
-        {
-            output = '[' + tag + (lang ? ' lang="' + lang + '"' : '') + (extra.title ? ' title="' + extra.title + '"' : '') + (extra.highlight ? ' highlight="' + extra.highlight + '"' : '') + ']' + code + '[/' + tag + ']';
+            return insertCode.call(this, ed, type, code);
         }
 
-
+        // Keep the existing named BBCode options. Escape HTML after composing
+        // attributes so titles cannot insert markup into the rich-text editor.
+        var escapeHtml = value => String(value).replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+        var option = value => String(value).replace(/"/g, "'").replace(/[\r\n\[\]]/g, ' ');
+        var lang = type.toLowerCase();
+        var open = '[CODE' + (lang ? ' lang="' + option(lang) + '"' : '')
+            + (extra.title ? ' title="' + option(extra.title) + '"' : '')
+            + (extra.highlight ? ' highlight="' + option(extra.highlight) + '"' : '') + ']';
+        code = escapeHtml(code).replace(/\t/g, '    ')
+            .replace(/\n /g, '\n&nbsp;').replace(/ {2}/g, '&nbsp; ')
+            .replace(/ {2}/g, ' &nbsp;').replace(/\n/g, '</p><p>');
+        var output = escapeHtml(open) + code + '[/CODE]';
         if (output.match(/<\/p>/i))
         {
-            output = '<p>' + output + '</p>';
-            output = output.replace(/<p><\/p>/g, '<p><br></p>');
+            output = ('<p>' + output + '</p>').replace(/<p><\/p>/g, '<p><br></p>');
         }
-
+        ed.undo.saveStep();
         ed.html.insert(output);
-    }
-})
-(jQuery);
+        ed.undo.saveStep();
+        XF.EditorHelpers.normalizeAfterInsert(ed);
+    };
+})();

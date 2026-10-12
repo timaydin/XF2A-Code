@@ -40,6 +40,7 @@ $3]]></replace>
     <find><![CDATA[// <!--[XF:js_global:xf_phrase_start]-->]]></find>
     <replace><![CDATA[$0
 
+CMTV_Code_copy: "{{ phrase('CMTV_Code_copy')|escape('js') }}",
 CMTV_Code_copied: "{{ phrase('CMTV_Code_copied')|escape('js') }}",]]></replace>
   </modification>
   <modification type="public" template="prism_macros" modification_key="CMTV_Code_prism_macros_plugins" description="Including Prism plugins" execution_order="10" enabled="1" action="str_replace">

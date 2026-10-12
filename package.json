@@ -1,0 +1,16 @@
+{
+  "name": "cmtv-code-port-checks",
+  "private": true,
+  "scripts": {
+    "test": "node --test tests/native.test.cjs",
+    "build": "python3 tools/build.py",
+    "test:browser": "node tests/browser-actions.cjs"
+  },
+  "devDependencies": {
+    "jsdom": "30.1.2",
+    "php-parser": "3.7.0",
+    "playwright-core": "1.64.0",
+    "prismjs": "1.30.0",
+    "terser": "5.51.2"
+  }
+}

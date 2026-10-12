@@ -85,7 +85,7 @@ pre[data-line] {
 .line-numbers .line-highlight:after {
 	content: none;
 }]]></template>
-  <template type="public" title="CMTV_Code_bb_code_tag_code" version_id="2010070" version_string="2.1.0"><![CDATA[<xf:macro template="prism_macros" name="setup" />
+  <template type="public" title="CMTV_Code_bb_code_tag_code" version_id="2020170" version_string="2.2.1"><![CDATA[<xf:macro template="prism_macros" name="setup" />
 
 <xf:css src="CMTV_Code_code_block.less" />
 
@@ -95,35 +95,45 @@ pre[data-line] {
 
 <div class="bbCodeBlock bbCodeBlock--screenLimited bbCodeBlock--code {{ $language ? 'language-' . $language : 'noLang' }} {{ $options.class }}"
 	 data-xf-init="CMTV-code-block">
-	
+
 	<div class="bbCodeBlock-header">
 		<div class="bbCodeBlock-title">
 			<span title="{{ $options.title ? $config.phrase ?: phrase('code') : '' }}">
 				{{ $options.title ?: $config.phrase ?: phrase('code') }}{$xf.language.label_separator}
 			</span>
 		</div>
-		
+
 		<div class="bbCodeBlock-actions">
-			<xf:fa icon="fa-expand-alt" title="{{ phrase('CMTV_Code_expand') }}" class="action action--expand action--hidden" 
+			<xf:fa icon="fa-expand-alt" title="{{ phrase('CMTV_Code_expand') }}" class="action action--expand action--hidden"
 				   data-xf-init="tooltip" data-xf-click="CMTV-code-block-expand" />
-			
-			<xf:fa icon="fa-compress-alt" title="{{ phrase('CMTV_Code_collapse') }}" class="action action--collapse action--hidden" 
+
+			<xf:fa icon="fa-compress-alt" title="{{ phrase('CMTV_Code_collapse') }}" class="action action--collapse action--hidden"
 				   data-xf-init="tooltip" data-xf-click="CMTV-code-block-collapse" />
-			
-			<xf:fa icon="fa-paste" title="{{ phrase('CMTV_Code_copy') }}" class="action action--copy" 
-				   data-xf-init="tooltip" />
+
+			<xf:fa icon="fa-paste" title="{{ phrase('CMTV_Code_copy') }}" class="action action--copy"
+				   data-xf-init="tooltip" data-xf-click="CMTV-code-block-copy" />
 		</div>
 	</div>
-	
+
 	<div class="bbCodeBlock-content" dir="ltr">
 		<pre class="bbCodeCode {{ $xf.options.CMTV_Code_lineNumbers_enabled ? 'line-numbers' . (!$language ? ' language-none' : '') : ''  }}" dir="ltr" data-line="{$options.highlight}" data-xf-init="CMTV-code-block-extend" data-lang="{{ $language ?: '' }}"><code>{$content}</code></pre>
 	</div>
-	
+
 	<div class="bbCodeBlock-grip resizer--hidden" data-xf-init="CMTV-code-block-resizer">
 		<xf:fa icon="fa-grip-horizontal" />
 	</div>
 </div>]]></template>
-  <template type="public" title="CMTV_Code_code_block.less" version_id="2010070" version_string="2.1.0"><![CDATA[body.CMTV_Code_resizing *
+  <template type="public" title="CMTV_Code_code_block.less" version_id="2020170" version_string="2.2.1"><![CDATA[body.CMTV_Code_resizing .bbCodeBlock-content
+{
+	transition: none !important;
+}
+
+@media (prefers-reduced-motion: reduce)
+{
+	.bbCodeBlock--code .bbCodeBlock-content { transition: none !important; }
+}
+
+body.CMTV_Code_resizing *
 {
 	cursor: ns-resize !important;
 }
@@ -135,41 +145,41 @@ pre[data-line] {
 		display: flex;
 		justify-content: center;
 		align-items: center;
-		
+
 		flex-wrap: wrap;
-	
+
 		background: xf-diminish(@xf-contentAltBg, 2%);
-		border-bottom: 1px solid @xf-borderColorFaint;		
+		border-bottom: 1px solid @xf-borderColorFaint;
 
 		.bbCodeBlock-title
 		{
 			flex: 1;
 		}
-		
+
 		.bbCodeBlock-actions
 		{
 			display: flex;
 			padding-right: @xf-paddingLarge - @xf-paddingMedium;
-			
+
 			.action
 			{
 				color: @xf-textColorMuted;
 				padding: @xf-paddingMedium;
-				
+
 				transition: color .2s;
-				
+
 				&:hover, &:focus
 				{
 					cursor: pointer;
 					color: @xf-textColor;
 				}
-				
+
 				&:active
 				{
 					transition: color 0s;
 					color: @xf-textColorAttention;
 				}
-				
+
 				&.action--hidden
 				{
 					display: none;
@@ -177,11 +187,12 @@ pre[data-line] {
 			}
 		}
 	}
-	
+
 	.bbCodeBlock-content
 	{
 		max-height: @xf-CMTV_Code_code_block_max_height;
-		
+		transition: height .2s;
+
 		&::-webkit-scrollbar
 		{
 			width: 0.9em;
@@ -193,7 +204,7 @@ pre[data-line] {
 		}
 
 		&::-webkit-scrollbar-thumb
-		{		
+		{
 			background-color: fade(@xf-borderColor, 60%);
 		}
 
@@ -205,23 +216,24 @@ pre[data-line] {
 
 	.bbCodeBlock-grip
 	{
+		touch-action: none;
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		
+
 		height: 20px;
 		border-top: 1px solid @xf-borderColorFaint;
 		background: xf-diminish(@xf-contentAltBg, 2%);
-		
+
 		color: @xf-textColorMuted;
 		transition: color .2s;
-		
+
 		&:hover
 		{
 			cursor: ns-resize;
 			color: @xf-textColorDimmed;
 		}
-		
+
 		&.resizer--hidden
 		{
 			display: none;

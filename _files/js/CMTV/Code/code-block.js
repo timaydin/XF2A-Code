@@ -1,156 +1,132 @@
 var CMTV_Code = window.CMTV_Code || {};
 
-(function ($)
+(function ()
 {
-    "use strict";
+    'use strict';
 
     CMTV_Code.CodeBlock = XF.Element.newHandler({
-        $expand: null,
-        $collapse: null,
-        $codeContainer: null,
-        $pre: null,
-        $code: null,
-
-        eCodeBlockH: null,
-        resizerH: null,
-
-        resizeButtons: {},
-
-        maxHeight: null,
-        minHeight: null,
-
         init: function ()
         {
-            this.$expand =          this.$target.find('.action--expand');
-            this.$collapse =        this.$target.find('.action--collapse');
-            this.$codeContainer =   this.$target.find('.bbCodeBlock-content');
-            this.$pre =             this.$target.find('pre');
-            this.$code =            this.$target.find('code');
-
-            this.eCodeBlockH = XF.Element.getHandler(this.$pre, 'CMTV-code-block-extend');
-            this.resizerH = XF.Element.getHandler(this.$target.find('[data-xf-init="CMTV-code-block-resizer"]'), 'CMTV-code-block-resizer');
-
+            this.codeContainer = this.target.querySelector('.bbCodeBlock-content');
+            this.pre = this.target.querySelector('pre');
+            this.code = this.pre.querySelector('code');
             this.resizeButtons = {
-                $expand: this.$target.find('.action--expand'),
-                $collapse: this.$target.find('.action--collapse')
+                expand: this.target.querySelector('.action--expand'),
+                collapse: this.target.querySelector('.action--collapse')
             };
-
-            this.registerVisibleCatcher();
+            this.minHeight = null;
+            this.maxHeight = null;
+            this.expanded = false;
+            this.frame = null;
+            this.resizeObserver = new ResizeObserver(this.scheduleLayout.bind(this));
+            this.resizeObserver.observe(this.target);
+            this.resizeObserver.observe(this.pre);
+            this.resizeObserver.observe(this.code);
+            this.scheduleLayout();
         },
 
-        skipInit: false,
+        scheduleLayout: function ()
+        {
+            if (this.frame !== null) return;
+            this.frame = requestAnimationFrame(() =>
+            {
+                this.frame = null;
+                this.visibleInit();
+            });
+        },
+
         visibleInit: function ()
         {
-            if (this.$target.height() <= 0)
+            if (!this.target.getClientRects().length || !this.pre.offsetHeight) return;
+
+            // Work in border-box pixels, including horizontal scrollbar space.
+            var container = this.codeContainer;
+            var style = getComputedStyle(container);
+            var border = parseFloat(style.borderTopWidth) + parseFloat(style.borderBottomWidth);
+            var padding = parseFloat(style.paddingTop) + parseFloat(style.paddingBottom);
+            var scrollbar = Math.max(0, container.offsetHeight - container.clientHeight - border);
+            if (this.minHeight === null)
             {
-                return;
+                this.minHeight = container.getBoundingClientRect().height;
+                // Freeze the CSS-limited height before relaxing max-height.
+                // Otherwise height:auto immediately expands to the full content.
+                container.style.boxSizing = 'border-box';
+                container.style.height = this.minHeight + 'px';
             }
+            this.maxHeight = Math.max(this.minHeight, this.pre.getBoundingClientRect().height + padding + border + scrollbar);
+            container.style.boxSizing = 'border-box';
+            container.style.minHeight = this.minHeight + 'px';
+            container.style.maxHeight = this.maxHeight + 'px';
+            if (this.expanded) container.style.height = this.maxHeight + 'px';
 
-            if (this.skipInit)
-            {
-                return;
-            }
-
-            //
-
-            this.eCodeBlockH.init();
-
-            if (this.getHeight(this.$pre) > this.getHeight(this.$codeContainer))
-            {
-                var scrollbarAdd = (this.getWidth(this.$code) > this.getWidth(this.$pre)) ? 15 : 0;
-
-                this.maxHeight = this.getHeight(this.$pre) + this.getPadding(this.$codeContainer).vertical + scrollbarAdd;
-                this.minHeight = this.getHeight(this.$codeContainer, true);
-
-                this.$codeContainer.css({
-                    height:         this.getHeight(this.$codeContainer, true) + 'px',
-                    'min-height':   this.minHeight + 'px',
-                    'max-height':   this.maxHeight + 'px'
-                });
-
-                this.resizeButtons.$expand.removeClass('action--hidden');
-                this.resizerH.visibleInit();
-            }
-
-            //
-
-            this.skipInit = true;
+            var grip = this.target.querySelector('.bbCodeBlock-grip');
+            grip.classList.toggle('resizer--hidden', this.maxHeight <= this.minHeight + 1);
+            this.updateButtons();
+            this.updateHighlights();
         },
 
-        registerVisibleCatcher: function ()
+        resize: function (height)
         {
-            var hidden = null;
+            if (this.minHeight === null) this.visibleInit();
+            if (this.minHeight === null) return;
+            height = Math.max(this.minHeight, Math.min(this.maxHeight, height));
+            this.expanded = height >= this.maxHeight - 1;
+            this.codeContainer.style.height = height + 'px';
+            this.updateButtons();
+        },
 
-            this.$target.parents().each(function ()
+        updateButtons: function ()
+        {
+            var height = this.codeContainer.getBoundingClientRect().height;
+            this.resizeButtons.expand.classList.toggle('action--hidden', height >= this.maxHeight - 1);
+            this.resizeButtons.collapse.classList.toggle('action--hidden', height <= this.minHeight + 1);
+        },
+
+        updateHighlights: function ()
+        {
+            // Range backgrounds must cover long unwrapped lines too.
+            var style = getComputedStyle(this.pre);
+            var width = Math.max(this.pre.clientWidth, this.code.getBoundingClientRect().width
+                + parseFloat(style.paddingLeft) + parseFloat(style.paddingRight));
+            this.pre.querySelectorAll('.line-highlight').forEach(function (line)
             {
-                if ($(this).is(':hidden'))
-                {
-                    hidden = this;
-                }
+                line.style.minWidth = width + 'px';
             });
-
-            if (hidden)
-            {
-                new MutationObserver(XF.proxy(this, 'visibleInit')).observe(hidden, { attributes: true });
-            }
-            else
-            {
-                this.visibleInit();
-            }
         },
 
-        // Heights
-
-        getHeight: function ($element, inner = false)
+        destroy: function ()
         {
-            return inner ? $element.innerHeight() : $element.height();
-        },
-
-        getWidth: function ($element, inner = false)
-        {
-            return inner ? $element.innerWidth() : $element.width();
-        },
-
-        getPadding: function ($element)
-        {
-            var vP = 0, hP = 0;
-
-            vP = this.getHeight($element, true) - this.getHeight($element);
-            hP = this.getWidth($element, true) - this.getWidth($element);
-
-            return {
-                vertical: vP,
-                horizontal: hP
-            }
+            this.resizeObserver.disconnect();
+            if (this.frame !== null) cancelAnimationFrame(this.frame);
         }
     });
 
     CMTV_Code.CodeBlockExtend = XF.extend(XF.CodeBlock, {
-        __backup: {
-            'init': '_init'
-        },
+        __backup: { init: '_init' },
 
         init: function ()
         {
-            this._init();
-
-            Prism.highlightElement(this.$target.find('code')[0]);
-
-            var preWidth = this.$target.width(),
-                codeWidth = this.$target.find('code').width(),
-                lineHighlight = this.$target.find('.line-highlight'),
-                targetWidth = codeWidth + this.$target.innerWidth() - preWidth;
-
-            lineHighlight.css('min-width', targetWidth);
-
-            if (codeWidth > preWidth)
+            var code = this.target.querySelector('code');
+            if (!code) return;
+            // The bundled plugin assumes valid, ascending, bounded ranges.
+            var count = code.textContent.split('\n').length;
+            this.target.dataset.line = (this.target.dataset.line || '').split(',').map(function (range)
             {
-                lineHighlight.width(targetWidth);
+                var match = range.trim().match(/^(\d+)(?:-(\d+))?$/);
+                if (!match) return '';
+                var start = Number(match[1]), end = Number(match[2] || match[1]);
+                if (start < 1 || start > count || end < start) return '';
+                return start + (end > start ? '-' + Math.min(end, count) : '');
+            }).filter(Boolean).join(',');
+            this._init();
+            // XF skips Prism for plain code. Plugins still need its complete hook.
+            if (!this.options.lang && typeof Prism === 'object')
+            {
+                Prism.highlightElement(code);
             }
         }
     });
 
     XF.Element.register('CMTV-code-block', 'CMTV_Code.CodeBlock');
     XF.Element.register('CMTV-code-block-extend', 'CMTV_Code.CodeBlockExtend');
-})
-(jQuery);
+})();
