@@ -12,7 +12,7 @@
     "src/addons/CMTV/Code/EventsListener.php": "39a8ac94f558b1295b9816f3a61618666174a63d05799864da651c4dd0e9bc2a",
     "src/addons/CMTV/Code/LICENSE": "8ceb4b9ee5adedde47b31e975c1d90c73ad27b6b165a1dcd80c7c545eb65b903",
     "src/addons/CMTV/Code/XF/BbCode/Renderer/EmailHtml.php": "81b8e35a43ff3ec9ddee035fb2115f141bc7b4aa71f1de7541853a8a0e4f1634",
-    "src/addons/CMTV/Code/XF/BbCode/Renderer/Html.php": "811a0fb687e23a8529898df9be1ce118bac7e5b160e5edf9e955e999857e11aa",
+    "src/addons/CMTV/Code/XF/BbCode/Renderer/Html.php": "473d9a8d921732996d9fab0f05e779452359c4e2afced54afea477581e895fd8",
     "src/addons/CMTV/Code/XF/BbCode/RuleSet.php": "c1a40bc46c8270cced7917c922bf4ca98d201b81d05f217c91627733d245f9a9",
     "src/addons/CMTV/Code/_data/activity_summary_definitions.xml": "99d8c2563a31320d66f958fc8bda78613545f5f7959bb3cf5318805e3a3c39d2",
     "src/addons/CMTV/Code/_data/admin_navigation.xml": "064ec797484ac00d5ee37367b50b06846d11f480d00550997712707f8fdac8c0",
@@ -41,5 +41,5 @@
     "src/addons/CMTV/Code/_data/templates.xml": "a2923412678f624542b45eb2ca5ba23309fb601c64954a238caa5d6d396e2f4d",
     "src/addons/CMTV/Code/_data/widget_definitions.xml": "37e46965256430f24004c2e7f08ba08f9b0d1cbcc4d70e84b3f4e3ffb713e64b",
     "src/addons/CMTV/Code/_data/widget_positions.xml": "a29cee66134f6bc5d75ed9df1eef21096c24401915c5b5c774389c3d7bb2d5b3",
-    "src/addons/CMTV/Code/addon.json": "6d9378ec12ca4c424764378467d4458cd625cdc1db91e9189e6d15f1fdafd4e1"
+    "src/addons/CMTV/Code/addon.json": "329d2ff5b23c9bffa2f5c5675deffa07fa45077b0f3e757747b330a845221b06"
 }

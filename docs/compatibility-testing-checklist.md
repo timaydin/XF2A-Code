@@ -1,4 +1,4 @@
-# CMTV Code 2.2.2 — XenForo 2.3.4 compatibility checklist
+# CMTV Code 2.2.3 — XenForo 2.3.4 compatibility checklist
 
 Status: release-format staging candidate, not certified on a XenForo runtime.
 Base: CMTV/XF2A-Code 978ab69, add-on ID CMTV/Code. Target XF version ID 2030470.
@@ -26,8 +26,8 @@ A Chromium regression test now covers actual XF.Event dispatch, initial height, 
 
 - [ ] Use a private licensed XenForo **2.3.4** instance and the same PHP version as the intended forum; disable outbound email and external callbacks.
 - [ ] Snapshot its files/database. Test a fresh install and, separately, an upgrade from original CMTV Code 2.2.0 with existing posts/options, and an upgrade from port candidate 2.2.1.
-- [ ] Install `CMTV-Code-2.2.2-XF2.3.4.zip` through the ACP add-on ZIP installer, or copy the ZIP's `upload/` contents into the staging XF root and install/upgrade **CMTV/Code** from ACP.
-- [ ] Confirm version 2.2.2, all existing option values preserved, all add-on file health checks pass, and no server errors.
+- [ ] Install `CMTV-Code-2.2.3-XF2.3.4.zip` through the ACP add-on ZIP installer, or copy the ZIP's `upload/` contents into the staging XF root and install/upgrade **CMTV/Code** from ACP.
+- [ ] Confirm version 2.2.3, all existing option values preserved, all add-on file health checks pass, and no server errors.
 - [ ] Run `find src/addons/CMTV/Code -name '*.php' -print0 | xargs -0 -n1 php -l` on staging.
 - [ ] Verify PHP extension methods against 2.3.4 parents: RuleSet::addDefaultTags/parseValidateCode, Html::renderTagCode/getRenderedCode, EmailHtml::renderTagCode, and both event listener signatures.
 - [ ] In ACP, confirm all seven template modifications below apply without errors and inspect each replacement.
@@ -108,16 +108,21 @@ Use Node 22+ and Python 3; no runtime Node dependency is installed into XenForo.
 
 ```sh
 npm ci --ignore-scripts
-python3 tools/static-checks.py
 npm test
 npm run build
+python3 tools/static-checks.py
 ```
 
-`tools/build.py` writes the installable ZIP to `dist/`, regenerates `hashes.json`,
+`tools/build.py` writes the installable ZIP to `dist/`, regenerates `hashes.json`
+using XenForo's SHA-256 normalization (remove every `\r` byte before hashing),
 and verifies the archive. It excludes tests, development exports, archived releases,
 node_modules and documentation from the installable payload. The source bundle
 contains the build/test tooling and lockfile. Use `_data` as the release authority;
 upstream `_output` is incomplete and must not be imported wholesale over `_data`.
+
+XenForo removes every carriage-return byte before computing add-on file hashes.
+The installer ZIP must still preserve the original file bytes; only the hash
+input is normalized. Regression tests cover CRLF/LF equivalence and byte preservation.
 
 Rollback on staging: restore the pre-test files/database snapshot. Do not uninstall
 the add-on just to downgrade, as uninstalling removes its configuration. Production
@@ -137,6 +142,14 @@ and freezes the CSS-limited initial height before raising max-height.
 - [ ] Long code starts collapsed, then expands and collapses repeatedly.
 - [ ] Copy a code block and paste into a plain-text editor; verify exact content.
 - [ ] Recheck custom title and highlighted ranges.
+
+## 2.2.3 hash-manifest correction
+
+XenForo's installed-file checker removes carriage returns before comparing the
+SHA-256 manifest. 2.2.3 applies this rule to every manifest entry while retaining
+the original CRLF PHP files in the archive. For an existing 2.2.2 install, the
+companion `CMTV-Code-2.2.2-hashes.json` contains a normalized manifest for that
+release without changing its add-on version.
 
 To reproduce the real browser action test (requires local Chromium and XF JS):
 

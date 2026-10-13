@@ -61,7 +61,10 @@ Validation completed: 17 isolated jsdom tests pass; Node syntax checks pass for
 all six JS files; all exported XML and package JSON parse; changed template
 exports match release data; asset references resolve; diff whitespace checks
 pass with original CRLF recognized; all four PHP files parse with php-parser
-3.7.0's PHP 7.2 grammar; ZIP integrity and every manifest hash pass.
+3.7.0's PHP 7.2 grammar. XenForo computes add-on SHA-256 values after removing
+all carriage-return bytes, so the build applies that normalization for every
+manifest entry while preserving original bytes in the upload ZIP. ZIP integrity
+and all normalized manifest hashes pass.
 
 Not completed: native PHP CLI lint (CLI unavailable, installation blocked by the
 environment), browser layout/input tests (browser archive downloads failed),
@@ -101,3 +104,13 @@ This supersedes the earlier browser-test limitation for those narrow action
 scenarios only. The test uses simplified CSS/icon output and live public XF
 JavaScript, not a complete licensed/pinned 2.3.4 forum. Full 2.3.4 integration,
 PHP CLI/inheritance checks and 2.3.13 verification remain outstanding.
+
+## Follow-up correction — 2.2.3 file-health hashes
+
+XenForo calculates add-on file-health SHA-256 values after removing every
+carriage-return byte. The 2.2.2 build hashed raw bytes instead, so the renderer
+manifest listed `811a0fb6…` while XenForo expected `473d9a8d…` for the same
+CRLF source file. The 2.2.3 build now applies this normalization to every
+manifest entry and keeps the original bytes unchanged in the install ZIP. A
+standalone `CMTV-Code-2.2.2-hashes.json` provides the corrected manifest for
+existing 2.2.2 installs without changing their add-on version.

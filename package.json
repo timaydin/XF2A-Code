@@ -2,7 +2,7 @@
   "name": "cmtv-code-port-checks",
   "private": true,
   "scripts": {
-    "test": "node --test tests/native.test.cjs",
+    "test": "node --test tests/native.test.cjs && python3 -m unittest discover -s tests -p 'test_*.py'",
     "build": "python3 tools/build.py",
     "test:browser": "node tests/browser-actions.cjs"
   },

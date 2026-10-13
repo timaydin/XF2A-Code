@@ -1,11 +1,11 @@
 """Build upload-layout ZIP and fresh XF SHA256 manifest; no XF installation needed."""
 from pathlib import Path
-import hashlib
 import json
 import subprocess
 import sys
 import tempfile
 import zipfile
+from hash_manifest import xenforo_sha256
 
 root = Path(__file__).resolve().parent.parent
 out = Path(sys.argv[1]).resolve() if len(sys.argv) > 1 else root / 'dist'
@@ -31,7 +31,7 @@ require('terser').minify(fs.readFileSync(process.argv[1], 'utf8')).then(r => {
 }).catch(e => { console.error(e); process.exit(1); });
 ''', str(source)], check=True, capture_output=True)
     files[path[:-3] + '.min.js'] = result.stdout
-hashes = {name: hashlib.sha256(data).hexdigest() for name, data in sorted(files.items())}
+hashes = {name: xenforo_sha256(data) for name, data in sorted(files.items())}
 manifest = (json.dumps(hashes, indent=4) + '\n').encode()
 (root / 'hashes.json').write_bytes(manifest)
 files['src/addons/CMTV/Code/hashes.json'] = manifest
@@ -46,6 +46,8 @@ with zipfile.ZipFile(archive, 'w', zipfile.ZIP_DEFLATED) as z:
 with zipfile.ZipFile(archive) as z:
     assert z.testzip() is None
     for name, digest in hashes.items():
-        assert hashlib.sha256(z.read('upload/' + name)).hexdigest() == digest
+        packaged = z.read('upload/' + name)
+        assert packaged == files[name], f'Packaging changed bytes for {name}'
+        assert xenforo_sha256(packaged) == digest, f'XenForo hash mismatch for {name}'
     assert len(z.namelist()) == len(hashes) + 1
 print(f'{archive}: {len(files)} files; every manifest hash verified')
