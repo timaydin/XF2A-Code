@@ -4,6 +4,11 @@
         "version_string": "2.1.2",
         "hash": "30e4dcce4b576468822c195d8d001a06"
     },
+    "public/CMTV_Code_Prism_plugins.less": {
+        "version_id": 2010070,
+        "version_string": "2.1.0",
+        "hash": "58aa5ee2a57d35421aaca8fa8ac17ce3"
+    },
     "public/CMTV_Code_bb_code_tag_code.html": {
         "version_id": 2020170,
         "version_string": "2.2.1",

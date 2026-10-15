@@ -2,3 +2,4 @@ node_modules/
 dist/
 __pycache__/
 _releases/
+_files/js/CMTV/Code/*.min.js
